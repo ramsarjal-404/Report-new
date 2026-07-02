@@ -1,0 +1,1806 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Identify - Reports</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1c4599;
+    --primary-dark: #09164f;
+    --bg: #f7fcff;
+    --surface: #ffffff;
+    --border: #d6dadc;
+    --text: #364765;
+    --muted: #919395;
+    --row-stripe: #f6f6f6;
+    --danger-bg: #ff9696;
+    --danger-border: #e51937;
+    --soft: #dae1ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Open Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; width: 100vw; }
+
+  /* ------- SIDEBAR ------- */
+  .sidebar {
+    width: 88px;
+    flex-shrink: 0;
+    background: var(--primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0 14px;
+    color: #fff;
+    overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 0; }
+  .sidebar .logo { width: 48px; height: 48px; margin-bottom: 18px; flex-shrink: 0; }
+  .nav-list { display: flex; flex-direction: column; gap: 14px; flex: 1; width: 100%; align-items: center; }
+  .nav-item {
+    width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.15s;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.10); }
+  .nav-item.active { background: rgba(255,255,255,0.18); }
+  .nav-item svg { width: 24px; height: 24px; stroke: #fff; }
+  .nav-item .label { font-size: 12px; line-height: 14px; text-align: center; }
+  .sidebar-bottom {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+  }
+  .icon-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+  .icon-btn:hover { background: rgba(255,255,255,0.10); }
+  .icon-btn svg { width: 22px; height: 22px; stroke: #fff; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: #4FC3F7; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+
+  /* ------- FOLDER PANE ------- */
+  .folder-pane {
+    width: 340px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.3s ease, opacity 0.3s ease;
+  }
+  .folder-pane.collapsed { width: 0; opacity: 0; }
+  .folder-pane-inner { width: 340px; display: flex; flex-direction: column; height: 100%; }
+  .pane-header { padding: 24px 20px 12px; }
+  .pane-title { font-size: 26px; font-weight: 600; color: var(--primary); margin: 0 0 16px; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%;
+    height: 40px;
+    padding: 0 40px 0 16px;
+    border: 1px solid #d3d8dd;
+    border-radius: 30px;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(28,69,153,0.12); }
+  .search-wrap .search-ic { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .folder-list { padding: 8px 8px 24px; overflow-y: auto; flex: 1; }
+  .folder-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--primary);
+    transition: background 0.15s;
+  }
+  .folder-row:hover { background: #eef3ff; }
+  .folder-row.active { background: #e1e9ff; }
+  .folder-row .plus {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #6b7080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  .folder-row.open .plus { transform: rotate(45deg); }
+  .folder-row .folder-ic { width: 30px; height: 30px; flex-shrink: 0; }
+  .folder-row .name { font-size: 15px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .folder-children {
+    display: none;
+    flex-direction: column;
+    padding: 2px 0 6px 36px;
+  }
+  .folder-row.open + .folder-children { display: flex; }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--primary);
+    font-size: 14px;
+    transition: background 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .file-row:hover { background: #eef3ff; }
+  .file-row.active { background: #e1e9ff; font-weight: 600; }
+  .file-row svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--primary); }
+  .file-row .name { overflow: hidden; text-overflow: ellipsis; }
+
+  /* ------- MAIN ------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    height: 72px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+  }
+  .collapse-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--primary);
+    transition: background 0.15s, transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+  }
+  .collapse-btn:hover { background: #f0f4ff; }
+  .collapse-btn svg { transition: transform 0.3s; }
+  .collapse-btn.flipped svg { transform: rotate(180deg); }
+
+  .topbar-title { font-size: 22px; font-weight: 600; color: var(--primary); margin: 0; flex: 1; }
+
+  .btn {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, transform 0.05s;
+    white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { transform: translateY(1px); }
+  .btn-danger { background: var(--danger-bg); border-color: var(--danger-border); color: #fff; }
+  .btn-soft { background: var(--soft); border-color: var(--primary-dark); color: var(--primary-dark); }
+  .btn-primary { background: var(--primary); border-color: var(--primary-dark); color: #fff; }
+
+  /* ------- TABLE ------- */
+  .table-wrap {
+    flex: 1;
+    overflow: auto;
+    background: #fff;
+    margin: 12px 16px 12px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  table { width: 100%; min-width: 1200px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  thead { position: sticky; top: 0; z-index: 5; }
+  thead th {
+    background: var(--row-stripe);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 14px;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  thead th:last-child { border-right: 0; }
+  thead th .th-row { display: flex; align-items: center; gap: 6px; }
+  thead th.center .th-row { justify-content: center; }
+  thead th .sort {
+    width: 14px; height: 14px; cursor: pointer; opacity: 0.6; transition: opacity 0.15s, transform 0.2s; flex-shrink: 0;
+  }
+  thead th .sort:hover { opacity: 1; }
+  thead th .sort.desc { transform: rotate(180deg); }
+  thead .filter-row td {
+    background: #fff;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-search { position: relative; }
+  .col-search input {
+    width: 100%;
+    height: 28px;
+    padding: 0 28px 0 8px;
+    border: none;
+    font-size: 12px;
+    outline: none;
+    background: transparent;
+  }
+  .col-search input:focus { background: transparent; }
+  .col-search svg { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #909294; }
+
+  tbody tr {
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: #f5f8ff; }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid #eef0f2;
+    border-right: 1px solid #eef0f2;
+    color: var(--text);
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+  }
+  tbody td:last-child { border-right: 0; }
+  tbody td.center { text-align: center; }
+  thead .filter-row td { border-right: 1px solid var(--border); }
+  thead .filter-row td:last-child { border-right: 0; }
+
+  /* Toggle */
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    background: #cfd3d8;
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-block;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: left 0.2s;
+  }
+  .toggle.on { background: var(--primary); }
+  .toggle.on::after { left: 24px; }
+
+  /* Action icons */
+  .row-actions { display: flex; gap: 8px; justify-content: center; }
+  .ico-btn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer;
+    color: #6b7080;
+    transition: background 0.15s, color 0.15s;
+    background: transparent;
+    border: 0;
+  }
+  .ico-btn:hover { background: #f0f2f5; }
+  .ico-btn.danger { color: #e51937; }
+  .ico-btn.danger:hover { background: #ffe9ec; }
+  .ico-btn.share:hover { color: var(--primary); }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .pagination .meta { font-size: 12px; font-weight: 600; color: var(--text); }
+  .page-btn {
+    height: 28px;
+    padding: 0 18px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: #fff;
+    transition: filter 0.15s;
+  }
+  .page-btn:hover { filter: brightness(1.05); }
+  .page-btn.outline { background: #fff; color: var(--primary); }
+  .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .page-input {
+    width: 44px; height: 28px;
+    border: 1px solid var(--primary);
+    border-radius: 14px;
+    text-align: center;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 12px;
+    outline: none;
+  }
+  .page-size {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid #c8ccd1;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fff;
+    cursor: pointer;
+    color: var(--text);
+  }
+
+  /* ----- Report Detail View ----- */
+  .view { display: none; flex-direction: column; flex: 1; min-height: 0; }
+  .view.active { display: flex; }
+  .detail-header {
+    padding: 18px 24px 14px;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .detail-title { font-size: 26px; font-weight: 700; color: var(--primary); margin: 0; }
+  .detail-title .name { font-weight: 400; }
+  .detail-filters { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+  .detail-filters .val { font-weight: 400; }
+  .breadcrumbs { font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 4px; margin: 0; flex-wrap: wrap; }
+  .breadcrumbs a { color: var(--primary); font-weight: 700; text-decoration: none; cursor: pointer; }
+  .breadcrumbs a:hover { text-decoration: underline; }
+  .breadcrumbs .sep { color: var(--primary); }
+  .breadcrumbs .current { font-weight: 400; }
+
+  .detail-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 24px;
+    background: #f7fcff;
+    border-bottom: 1px solid var(--border);
+  }
+  .toolbar-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid #d6dadc;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--primary);
+    transition: background 0.15s;
+  }
+  .toolbar-icon-btn:hover { background: #eef3ff; }
+
+  .detail-table-wrap {
+    flex: 1;
+    overflow: auto;
+    background: #fff !important;
+    margin: 0;
+    position: relative;
+  }
+  .detail-table tbody td {
+    background: #fff;
+    padding: 14px 18px;
+    border: 1px solid #e2dbdb;
+    color: var(--text);
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background 0.18s ease;
+  }
+  .detail-table tbody tr { transition: background 0.18s ease; }
+  .detail-table tbody tr:hover td { background: #f5f8ff; }
+
+  /* Preview column */
+  .detail-table td.preview-cell {
+    text-align: center;
+    white-space: nowrap;
+  }
+  .view-file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 18px;
+    background: #dae1ff;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    border-radius: 22px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(28,69,153,0.12);
+    white-space: nowrap;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  }
+  .view-file-btn::before {
+    content: "";
+    width: 14px; height: 14px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231c4599' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/><circle cx='12' cy='12' r='3'/></svg>");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+  .view-file-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(28,69,153,0.28);
+  }
+  .view-file-btn:hover::before {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/><circle cx='12' cy='12' r='3'/></svg>");
+  }
+  .view-file-btn:active { transform: scale(0.97); }
+
+  .preview-na {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #8a8f99;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    color: #8a8f99;
+    cursor: help;
+    outline: none;
+  }
+  .info-icon:hover, .info-icon:focus-visible { color: var(--primary); }
+  .info-tooltip {
+    position: fixed;
+    width: 260px;
+    padding: 10px 12px;
+    background: #1f2937;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 10000;
+    white-space: normal;
+    text-align: left;
+    transform: translate(-50%, -100%) translateY(-10px);
+  }
+  .info-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: calc(50% + var(--arrow-x, 0px));
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1f2937;
+  }
+  .info-icon:hover .info-tooltip,
+  .info-icon:focus-visible .info-tooltip {
+    opacity: 1;
+  }
+  .detail-table { width: 100%; min-width: 1400px; border-collapse: separate; border-spacing: 0; }
+  .detail-table thead th {
+    background: #f6f6f6;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    text-align: left;
+    padding: 14px 18px;
+    border: 1px solid #e2dbdb;
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .detail-table thead th .th-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .detail-table thead th:first-child { border-top-left-radius: 12px; }
+  .detail-table thead th:last-child { border-top-right-radius: 12px; }
+  .detail-table thead .filter-row th {
+    background: #fff;
+    padding: 10px 14px;
+  }
+  .detail-table .col-search input {
+    width: 100%;
+    height: 26px;
+    border: 0;
+    outline: none;
+    font-size: 13px;
+    background: transparent;
+  }
+  .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    pointer-events: none;
+    padding-top: 120px;
+  }
+  .empty-state svg { width: 220px; height: 180px; color: var(--primary); opacity: 0.85; }
+  .empty-state p { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
+
+  /* ----- File Detail View ----- */
+  .file-header {
+    padding: 18px 24px 12px;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .file-title-row { display: flex; align-items: center; gap: 14px; }
+  .file-title-icon { width: 56px; height: 56px; flex-shrink: 0; }
+  .file-title { font-size: 28px; font-weight: 700; color: var(--primary); margin: 0; }
+  .info-chips { display: flex; gap: 12px; flex-wrap: wrap; }
+  .info-chip {
+    background: #fff;
+    border: 1px solid #cecece;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .info-chip b { font-weight: 700; }
+  .file-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    background: var(--bg);
+    min-height: 0;
+  }
+  .pattern-table-wrap {
+    width: 560px;
+    flex-shrink: 0;
+    overflow: auto;
+    border-right: 1px solid var(--border);
+    background: #fff;
+  }
+  .pattern-table { width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+  .pattern-table col.col-name { width: auto; }
+  .pattern-table col.col-count { width: 140px; }
+  .pattern-table th, .pattern-table td {
+    padding: 12px 16px;
+    border: 1px solid #e6dfdf;
+    font-size: 14px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .pattern-table thead th {
+    background: #f6f6f6;
+    font-weight: 700;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .pattern-table thead th .th-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pattern-table tbody tr { transition: background 0.15s; cursor: pointer; }
+  .pattern-table tbody tr:hover td { background: #f5f8ff; }
+  .pattern-table tbody tr.selected td:first-child {
+    background: #e6f5ff;
+  }
+  .pattern-table .pattern-name {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text);
+  }
+  .pattern-table td:first-child { white-space: normal; word-break: break-word; }
+  .pattern-table tr.selected .pattern-name {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .pattern-table tr.selected .pattern-cell {
+    background: #e6f5ff;
+    border: 1.2px solid var(--primary);
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pattern-tick {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pattern-tick svg { width: 14px; height: 9px; color: #fff; }
+  .pattern-table thead .th-search-row th {
+    background: #fff;
+    padding: 8px 12px;
+    position: sticky; top: 45px; z-index: 4;
+  }
+  .pattern-table .th-search {
+    position: relative;
+    display: block;
+  }
+  .pattern-table .th-search input {
+    width: 100%;
+    height: 30px;
+    padding: 4px 28px 4px 10px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    outline: none;
+  }
+  .pattern-table .th-search input:focus { background: transparent; }
+  .pattern-table .th-search svg {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    color: #9aa0a6;
+    pointer-events: none;
+  }
+  .count-pill {
+    display: inline-block;
+    border: 1px solid #d3c9c9;
+    border-radius: 12px;
+    padding: 4px 18px;
+    font-size: 16px;
+    color: var(--text);
+    min-width: 78px;
+    text-align: center;
+  }
+
+  .pinned-column {
+    width: 220px;
+    flex-shrink: 0;
+    overflow: auto;
+    border-right: 1px solid var(--border);
+    background: #fff;
+  }
+  .pinned-column .pin-head {
+    background: #e6f5ff;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e6dfdf;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .pinned-column .pin-icon { color: var(--primary); }
+  .pin-toggle {
+    background: transparent; border: none; padding: 4px;
+    border-radius: 6px; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center;
+    color: var(--primary);
+  }
+  .pin-toggle:hover { background: rgba(28,69,153,0.08); }
+  .pin-toggle[aria-pressed="false"] .pin-icon { color: #9aa0a6; }
+  .file-content.pattern-collapsed .pattern-table-wrap { display: none; }
+  .pinned-column .pin-search {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 18px;
+    background: #fff;
+    border-bottom: 1px solid #e6dfdf;
+    color: #8a8f99;
+  }
+  .pinned-column .pin-search input {
+    flex: 1; min-width: 0;
+    border: none; outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text);
+    font-family: 'Open Sans', sans-serif;
+  }
+  .pinned-column .pin-search input::placeholder { color: #b0b6c0; }
+  .pinned-column .pin-sub { padding: 12px 18px; font-weight: 600; color: var(--text); border-bottom: 1px solid #e6dfdf; font-size: 16px; }
+  .pinned-column .pin-row {
+    padding: 14px 18px;
+    border-bottom: 1px solid #e6dfdf;
+    font-size: 14px;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+  .pinned-column .pin-row:hover { background: #f5f8ff; }
+  .pinned-column .pin-row.is-active { background: #fff3c4; font-weight: 600; }
+
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+  .rp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    background: #fafbff;
+    flex-shrink: 0;
+  }
+  .view-switch {
+    display: inline-flex;
+    border: 1px solid #d3c9c9;
+    border-radius: 999px;
+    background: #fff;
+    padding: 2px;
+  }
+  .vs-opt {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5b6573;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .vs-opt.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .rp-tools { display: inline-flex; align-items: center; gap: 6px; }
+  .rp-btn {
+    border: 1px solid #d3c9c9;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--text);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+  .rp-btn:hover { background: #f5f8ff; border-color: var(--primary); color: var(--primary); }
+  .rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .rp-btn.reveal-btn[aria-pressed="true"] {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+  }
+  .match-counter { font-size: 13px; color: #5b6573; min-width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
+  .rp-divider { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+
+  .text-content {
+    flex: 1;
+    overflow: auto;
+    padding: 22px 28px;
+    background: #fff;
+    line-height: 1.7;
+    color: var(--text);
+    font-size: 15px;
+  }
+  .text-content p { margin: 0 0 12px; }
+  .text-content .hl {
+    background: #f4d874; border-radius: 4px; padding: 1px 4px;
+    cursor: pointer;
+    transition: box-shadow 0.15s, background 0.15s;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 0.95em;
+  }
+  .text-content .hl:hover { background: #ffd861; box-shadow: 0 0 0 2px rgba(244,216,116,0.45); }
+  .text-content .hl.is-active { background: #ffb84d; box-shadow: 0 0 0 2px rgba(255,184,77,0.55); }
+  .text-content[data-masked="true"] .hl {
+    color: transparent;
+    text-shadow: 0 0 8px rgba(28,69,153,0.5);
+    border-bottom: 1.5px solid #b89c2f;
+    user-select: none;
+  }
+  .text-content h4 { margin: 18px 0 6px; font-size: 15px; font-weight: 700; color: var(--text); }
+
+  /* Email layout */
+  .email-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #f5f7fd;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: 14px;
+  }
+  .email-row { display: flex; gap: 10px; padding: 4px 0; }
+  .email-row .lbl { width: 64px; color: #5b6573; font-weight: 600; flex-shrink: 0; }
+  .email-row .val { color: var(--text); word-break: break-word; }
+  .email-subject {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    margin: 6px 0 10px;
+  }
+  .email-attachments {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding-top: 10px; margin-top: 10px;
+    border-top: 1px dashed #cfd6e4;
+  }
+  .att-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff;
+    border: 1px solid #d3c9c9;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .att-chip .att-count {
+    background: #fff3c4; color: #8a6d1f;
+    font-size: 11px; font-weight: 700;
+    padding: 1px 6px; border-radius: 999px;
+  }
+  .att-chip svg { color: var(--primary); }
+  .email-body { padding: 0; }
+  .email-body p { margin: 0 0 12px; }
+  .email-signature { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); color: #5b6573; font-size: 13px; }
+
+  /* Floating help */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(28,69,153,0.35);
+    z-index: 100;
+    border: 3px solid #fff;
+    transition: transform 0.2s;
+  }
+  .fab:hover { transform: scale(1.05); }
+
+  /* ----- Responsive ----- */
+  @media (max-width: 1100px) {
+    .folder-pane { width: 280px; }
+    .folder-pane-inner { width: 280px; }
+    .topbar-title { font-size: 18px; }
+  }
+  @media (max-width: 800px) {
+    .sidebar { width: 64px; }
+    .nav-item { width: 60px; }
+    .nav-item .label { font-size: 10px; }
+    .folder-pane { width: 240px; }
+    .folder-pane-inner { width: 240px; }
+    .pane-title { font-size: 20px; }
+  }
+  @media (max-width: 640px) {
+    .folder-pane { position: absolute; left: 64px; top: 0; bottom: 0; z-index: 50; box-shadow: 4px 0 12px rgba(0,0,0,0.08); }
+    .topbar-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Reusable SVG sprite for sidebar icons -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-lepideai" viewBox="0 0 24 24" fill="none">
+    <path d="M19.1174 3.88325C20.1084 4.8743 20.3662 6.60104 19.7389 8.76809C19.1186 10.9108 17.6644 13.334 15.499 15.4994C13.3336 17.6648 10.9104 19.119 8.76769 19.7393C6.60061 20.3666 4.87391 20.1089 3.88285 19.1178C2.8918 18.1268 2.63408 16.4001 3.26137 14.233C3.88163 12.0903 5.33582 9.66708 7.50125 7.50165C9.66667 5.33624 12.0899 3.88203 14.2326 3.26177C16.3996 2.6345 18.1264 2.89221 19.1174 3.88325Z" stroke="currentColor" stroke-width="1.25"/>
+    <path d="M3.88307 3.88295C4.87412 2.89192 6.60086 2.6342 8.76791 3.26147C10.9106 3.88173 13.3338 5.33594 15.4992 7.50135C17.6647 9.66678 19.1189 12.09 19.7391 14.2327C20.3664 16.3998 20.1087 18.1265 19.1176 19.1175C18.1266 20.1086 16.3999 20.3663 14.2328 19.739C12.0901 19.1187 9.66689 17.6645 7.50147 15.4991C5.33606 13.3337 3.88185 10.9105 3.26159 8.76779C2.63432 6.60074 2.89203 4.874 3.88307 3.88295Z" stroke="currentColor" stroke-width="1.25"/>
+    <path fill="currentColor" d="M9.12 8.65h1.13l.84 2.76H9.96L9.12 8.65zm0 3.15h1.13l.84 2.76H9.96l-.84-2.76zm1.58-3.15h1.1l.81 2.76h-1.09l-.82-2.76zm0 3.15h1.1l.81 2.76h-1.09l-.82-2.76zm1.51-3.15h1.13l.84 2.76h-1.13l-.84-2.76zm0 3.15h1.13l.84 2.76h-1.13l-.84-2.76z"/>
+  </symbol>
+  <symbol id="i-auditor" viewBox="0 0 24 24" fill="none">
+    <path d="M8 14l-.36 1.78c-.31 1.54-.46 2.31-1.01 2.77-.55.45-1.34.45-2.91.45H2M2 17v4M16.95 11.51l4.25.03c.13 0 .25.03.36.09.19.1.34.27.4.48.07.2.05.43-.05.62l-2.43 4.83c-.06.12-.15.23-.27.31-.11.07-.24.12-.38.13-.14.01-.28-.01-.4-.07a.74.74 0 0 1-.32-.26L15.6 14.2M13.02 10.46l-.06.12M15.15 15.1l2.25-4.49a1.6 1.6 0 0 0-.87-2.21L7.68 3.83a2.5 2.5 0 0 0-3.29 1.32L3.04 7.84a2.5 2.5 0 0 0 1.31 3.3l8.85 4.57c.98.5 2.18.11 2.67-.88M13.07 10.35a.34.34 0 1 1-.32.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-trust" viewBox="0 0 24 24" fill="none">
+    <path d="M7.48 11.2l2.88 2.88 5.04-5.04M3.17 4v9.36C3.17 17.7 6.7 21.27 11.08 21.27c4.39 0 7.92-3.57 7.92-7.91V4H3.17z" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-detect" viewBox="0 0 24 24" fill="none">
+    <path d="M2 12h3M19 12h3M12 22v-3M12 5V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M10 12h4M12 14v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7 3.34A10 10 0 1 1 3.34 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-protect" viewBox="0 0 24 24" fill="none">
+    <path d="M8.76 3.95l3.31 3.4h6.61c1.85 0 3.36 1.51 3.36 3.45v6.8c0 1.91-1.51 3.45-3.36 3.45H4.32c-1.85 0-3.36-1.54-3.36-3.45V7.4c0-1.91 1.51-3.45 3.36-3.45h4.44z" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M6.91 13.92l1.27 1.16 2.23-2.04M5 11v3.79A3.5 3.5 0 0 0 8.5 18a3.5 3.5 0 0 0 3.5-3.21V11H5z" stroke="currentColor" stroke-width="1.2"/>
+  </symbol>
+  <symbol id="i-identify" viewBox="0 0 24 24" fill="none">
+    <circle cx="12.37" cy="7.83" r="3.13" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M19.08 19.53c0-3.77-3-4.88-6.71-4.88s-6.71 1.11-6.71 4.88" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M8.75 1.98H5a2 2 0 0 0-2 2v6.24a2 2 0 0 0 2 2h2.31M16.25 1.98H20a2 2 0 0 1 2 2v6.24a2 2 0 0 1-2 2h-2.31" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="i-mylepide" viewBox="0 0 24 24" fill="none">
+    <path d="M4.64 1.6h1.25c.28 0 .54.19.61.46l2.12 7.33c.12.4-.19.81-.61.81H6.76a.65.65 0 0 1-.61-.46L4.03 2.41a.61.61 0 0 1 .61-.81zM4.64 12.8h1.25c.28 0 .54.19.61.46l2.12 7.33c.12.4-.19.81-.61.81H6.76a.65.65 0 0 1-.61-.46L4.03 13.61a.61.61 0 0 1 .61-.81zM10.17 1.6h1.37c.28 0 .53.19.61.46l2.19 7.33c.12.4-.19.81-.61.81h-1.37a.65.65 0 0 1-.61-.46L9.56 2.42a.61.61 0 0 1 .61-.82zM10.17 12.8h1.37c.28 0 .53.19.61.46l2.19 7.33c.12.4-.19.81-.61.81h-1.37a.65.65 0 0 1-.61-.46L9.56 13.62a.61.61 0 0 1 .61-.82zM15.45 1.6h1.37c.28 0 .53.19.61.46l2.19 7.33c.12.4-.19.81-.61.81h-1.37a.65.65 0 0 1-.61-.46L14.83 2.42a.61.61 0 0 1 .62-.82zM15.45 12.8h1.37c.28 0 .53.19.61.46l2.19 7.33c.12.4-.19.81-.61.81h-1.37a.65.65 0 0 1-.61-.46L14.83 13.62a.61.61 0 0 1 .62-.82z" stroke="currentColor" stroke-width="1.2"/>
+  </symbol>
+  <symbol id="i-dashboard" viewBox="0 0 24 24" fill="none">
+    <path d="M8.4 3H5.6A1.6 1.6 0 0 0 4 4.6v4.8c0 .88.72 1.6 1.6 1.6h2.8c.88 0 1.6-.72 1.6-1.6V4.6A1.6 1.6 0 0 0 8.4 3zM8.4 15H5.6A1.6 1.6 0 0 0 4 16.6v2.8c0 .88.72 1.6 1.6 1.6h2.8c.88 0 1.6-.72 1.6-1.6v-2.8A1.6 1.6 0 0 0 8.4 15zM18.4 3h-2.8a1.6 1.6 0 0 0-1.6 1.6v2.8c0 .88.72 1.6 1.6 1.6h2.8a1.6 1.6 0 0 0 1.6-1.6V4.6A1.6 1.6 0 0 0 18.4 3zM18.4 13h-2.8a1.6 1.6 0 0 0-1.6 1.6v4.8c0 .88.72 1.6 1.6 1.6h2.8a1.6 1.6 0 0 0 1.6-1.6v-4.8a1.6 1.6 0 0 0-1.6-1.6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none">
+    <path d="M9.67 4.14a2.34 2.34 0 0 1 4.66 0 2.34 2.34 0 0 0 3.5 2.02 2.34 2.34 0 1 1 2.33 4.04 2.34 2.34 0 0 0 0 4.04 2.34 2.34 0 1 1-2.33 4.04 2.34 2.34 0 0 0-3.5 2.02 2.34 2.34 0 1 1-4.66 0 2.34 2.34 0 0 0-3.5-2.02 2.34 2.34 0 1 1-2.33-4.04 2.34 2.34 0 0 0 0-4.04 2.34 2.34 0 1 1 2.33-4.04 2.34 2.34 0 0 0 3.5-2.02z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+  </symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10 9 9 9 8 9"/>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 32 32" fill="none">
+    <path d="M3 8a2 2 0 0 1 2-2h7l3 3h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" fill="#f6c945" stroke="#d6a920" stroke-width="1.2"/>
+    <path d="M3 12h26v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V12z" fill="#fbd870"/>
+  </symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+  </symbol>
+  <symbol id="i-double-check" viewBox="0 0 29 17">
+    <path d="M0 9.5277L6.80202 16.3297L8.51774 14.6018L1.72788 7.81198M26.5632 0L13.6892 12.8861L8.62725 7.81198L6.8872 9.5277L13.6892 16.3297L28.2911 1.72788M21.4039 1.72788L19.6881 0L11.9613 7.72681L13.6892 9.44252L21.4039 1.72788Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+  </symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </symbol>
+  <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </symbol>
+  <symbol id="i-logo" viewBox="0 0 49 49" fill="none">
+    <path d="M12.2615 3.31445C12.627 3.44802 13.1673 4.92092 13.3454 5.33543L14.5494 8.1103L18.9486 18.2307L20.2913 21.3349C20.5439 21.9145 20.8581 22.682 21.1649 23.216C18.3854 23.1598 15.5812 23.2309 12.802 23.2007L12.6923 23.1939C12.4534 23.0576 10.5273 18.4057 10.2672 17.8012L6.17776 8.40519C5.46047 6.76452 4.72142 4.96106 3.96265 3.3555C4.7272 3.29014 6.03557 3.32966 6.82552 3.33042C8.63751 3.34017 10.4496 3.33485 12.2615 3.31445Z" fill="#2996D3"/>
+    <path d="M29.1028 3.34792C30.8256 3.28068 32.5826 3.35914 34.3165 3.33173C34.6866 3.32587 37.455 3.23796 37.5821 3.46679C37.9367 4.1052 38.3336 5.108 38.628 5.79212L40.5119 10.1314C42.334 14.3772 44.2634 18.6407 46.0542 22.9052C46.1249 23.0736 46.1225 23.0629 46.0966 23.2395C45.6518 23.1674 43.8579 23.197 43.3406 23.1969C41.4734 23.1921 39.606 23.1971 37.7388 23.2117C37.1569 22.1194 36.5514 20.5443 36.0331 19.3562L32.6422 11.5536L30.0055 5.50614C29.8671 5.18759 29.1279 3.55488 29.1028 3.34792Z" fill="#2996D3"/>
+    <path d="M16.5488 3.34722C18.2151 3.28242 20.043 3.36215 21.7255 3.3314C22.2986 3.32093 24.4814 3.29072 24.9383 3.37642C25.4263 3.97462 26.6296 7.05449 27.0077 7.91731L31.3158 17.8506C31.6231 18.5618 33.5914 22.8401 33.6065 23.2104C30.7755 23.1924 27.9445 23.1922 25.1135 23.2099C25.009 22.7787 24.517 21.7281 24.3162 21.2745C23.8916 20.3145 23.4731 19.3518 23.0605 18.3866L17.8749 6.43626C17.6831 5.98374 16.5872 3.60458 16.5488 3.34722Z" fill="#2996D3"/>
+    <path d="M4.01288 26.1863C4.9509 26.221 6.01806 26.1988 6.96366 26.1998L12.4359 26.1889C13.2972 27.8958 14.208 30.1573 14.9738 31.9446L18.376 39.7677L20.1963 43.9547C20.3686 44.3415 21.0247 45.7138 21.1026 46.0087C18.2604 46.0405 15.4093 45.993 12.5663 46.0309C12.4843 45.6922 12.0307 44.7148 11.873 44.3528L10.421 41.015L5.23578 29.1014C5.0777 28.7399 4.0195 26.3938 4.01288 26.1863Z" fill="#2996D3"/>
+    <path d="M29.094 26.1916C31.8621 26.2399 34.7603 26.2038 37.5356 26.1892C38.0332 27.203 38.4107 28.1521 38.8637 29.1782L42.3211 37.1314C43.2005 39.1093 44.0613 41.0954 44.9035 43.0894C45.2779 43.9576 45.8848 45.1548 46.1632 46.0311C45.0741 45.9886 43.8195 46.0152 42.7175 46.0153C41.0345 46.0092 39.3515 46.0151 37.6685 46.0329C37.5727 45.6487 37.0777 44.6129 36.8926 44.1906L35.3879 40.7257L30.5817 29.6521C30.3776 29.1881 29.1287 26.5008 29.094 26.1916Z" fill="#2996D3"/>
+    <path d="M16.5668 26.1489C16.9923 26.2291 18.3405 26.2015 18.8322 26.2017L23.1847 26.1945C23.6967 26.1907 24.414 26.1533 24.9079 26.2341C24.9986 26.249 25.2406 26.6862 25.2929 26.8045C25.959 28.3114 26.6093 29.8375 27.2668 31.3472L31.962 42.1298C32.5192 43.3817 33.0407 44.7858 33.6668 45.9944C33.2779 46.0511 31.4211 46.0185 30.9602 46.0183C29.018 46.0114 27.0758 46.015 25.1336 46.0291C24.5655 44.5099 23.5807 42.4362 22.9115 40.8931L18.2363 30.1225C18.0186 29.6187 16.607 26.4992 16.5668 26.1489Z" fill="#2996D3"/>
+  </symbol>
+</svg>
+
+<div class="app">
+
+  <!-- ====== SIDEBAR ====== -->
+  <aside class="sidebar">
+    <div class="logo"><svg viewBox="0 0 49 49" width="48" height="48"><use href="#i-logo"/></svg></div>
+    <nav class="nav-list">
+      <a class="nav-item" data-page="lepideai"><svg><use href="#i-lepideai"/></svg><span class="label">Lepide AI</span></a>
+      <a class="nav-item" data-page="auditor"><svg><use href="#i-auditor"/></svg><span class="label">Auditor</span></a>
+      <a class="nav-item" data-page="trust"><svg><use href="#i-trust"/></svg><span class="label">Trust</span></a>
+      <a class="nav-item" data-page="detect"><svg><use href="#i-detect"/></svg><span class="label">Detect</span></a>
+      <a class="nav-item" data-page="protect"><svg><use href="#i-protect"/></svg><span class="label">Protect</span></a>
+      <a class="nav-item active" data-page="identify"><svg><use href="#i-identify"/></svg><span class="label">Identify</span></a>
+      <a class="nav-item" data-page="mylepide"><svg><use href="#i-mylepide"/></svg><span class="label">My Lepide</span></a>
+      <a class="nav-item" data-page="dashboard"><svg><use href="#i-dashboard"/></svg><span class="label">Dashboard</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="icon-btn" title="Settings"><svg><use href="#i-settings"/></svg></button>
+      <div class="avatar" title="Account">R</div>
+    </div>
+  </aside>
+
+  <!-- ====== FOLDER PANE ====== -->
+  <section id="folderPane" class="folder-pane">
+    <div class="folder-pane-inner">
+      <div class="pane-header">
+        <h1 class="pane-title">Identify - Reports</h1>
+        <div class="search-wrap">
+          <input id="folderSearch" type="text" placeholder="Search" />
+          <span class="search-ic"><svg width="18" height="18"><use href="#i-search"/></svg></span>
+        </div>
+      </div>
+      <div id="folderList" class="folder-list"></div>
+    </div>
+  </section>
+
+  <!-- ====== MAIN ====== -->
+  <main class="main">
+    <div class="topbar" id="topbar">
+      <button id="collapseBtn" class="collapse-btn" title="Collapse panel">
+        <svg width="16" height="16"><use href="#i-chevron-left"/></svg>
+      </button>
+      <h2 class="topbar-title" id="topbarTitle">Identify - Reports</h2>
+      <div id="listActions" style="display:flex;gap:12px;">
+        <button class="btn btn-danger">Remove Folder</button>
+        <button class="btn btn-soft">Create Folder</button>
+        <button class="btn btn-primary">Create Report</button>
+      </div>
+    </div>
+
+  <div id="listView" class="view active">
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><div class="th-row">Report Name <svg class="sort" data-col="name"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Description</div></th>
+            <th><div class="th-row">Shared with</div></th>
+            <th><div class="th-row">Shared By <svg class="sort" data-col="sharedby"><use href="#i-arrow-up"/></svg></div></th>
+            <th class="center"><div class="th-row">My Lepide <svg class="sort" data-col="mylepide"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Report Type <svg class="sort" data-col="type"><use href="#i-arrow-up"/></svg></div></th>
+            <th class="center"><div class="th-row">Added By <svg class="sort" data-col="addedby"><use href="#i-arrow-up"/></svg></div></th>
+            <th class="center"><div class="th-row">Action</div></th>
+          </tr>
+          <tr class="filter-row">
+            <td><div class="col-search"><input placeholder="Search" data-col="name"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td><div class="col-search"><input placeholder="Search" data-col="desc"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td><div class="col-search"><input placeholder="Search" data-col="sharedwith"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td><div class="col-search"><input placeholder="Search" data-col="sharedby"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td></td>
+            <td><div class="col-search"><input placeholder="Search" data-col="type"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td><div class="col-search"><input placeholder="Search" data-col="addedby"/><svg width="14" height="14"><use href="#i-search"/></svg></div></td>
+            <td></td>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="meta">Total Records - <span id="totalRecords">100</span></span>
+      <button class="page-btn" data-action="first">First</button>
+      <button class="page-btn" data-action="prev">Previous</button>
+      <input class="page-input" id="pageInput" value="1" />
+      <span class="meta">/ <span id="pageMax">5</span></span>
+      <button class="page-btn" data-action="next">Next</button>
+      <button class="page-btn" data-action="last">Last</button>
+      <select class="page-size" id="pageSize">
+        <option>25</option><option selected>50</option><option>100</option>
+      </select>
+      <span class="meta">/ Page</span>
+    </div>
+  </div><!-- /listView -->
+
+  <!-- ====== DETAIL VIEW (Classified Files report) ====== -->
+  <div id="detailView" class="view">
+    <div class="detail-header">
+      <h1 class="detail-title">Report Name - <span class="name" id="detailName">Classified Files</span></h1>
+      <p class="detail-filters">Filters: <span class="val">Exchange Server(s) : [Equals [All]]</span></p>
+      <p class="breadcrumbs">
+        <a data-back="home">Home</a><span class="sep">/</span>
+        <a data-back="identify">Lepide Identify</a><span class="sep">/</span>
+        <a data-back="reports">Reports</a><span class="sep">/</span>
+        <span class="current" id="detailCrumb">Classified Files</span>
+      </p>
+    </div>
+    <div class="detail-toolbar">
+      <button class="toolbar-icon-btn" title="Export">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+      <button class="toolbar-icon-btn" title="Filter">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+      </button>
+      <button class="btn btn-primary" id="generateReportBtn">Generate Report</button>
+    </div>
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th><div class="th-row">File Server <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">File Path <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Content Type(s) <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Compliance <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Count <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Risk Level <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Monetary Value <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Classification Date Time <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            <th><div class="th-row">Preview</div></th>
+          </tr>
+          <tr class="filter-row">
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th><div class="col-search" style="display:flex;align-items:center;gap:6px;"><input placeholder=""/><svg width="16" height="16"><use href="#i-search"/></svg></div></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="detailTbody"><tr><td colspan="9" style="height:600px;"></td></tr></tbody>
+      </table>
+      <div class="empty-state" id="detailEmpty">
+        <svg viewBox="0 0 220 180" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+          <ellipse cx="110" cy="160" rx="80" ry="8" fill="#eef3ff" stroke="none"/>
+          <rect x="50" y="40" width="110" height="22" rx="4" fill="#fff"/>
+          <rect x="50" y="62" width="110" height="22" rx="4" fill="#fff"/>
+          <rect x="50" y="84" width="110" height="22" rx="4" fill="#fff"/>
+          <circle cx="65" cy="51" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="75" cy="51" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="85" cy="51" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="65" cy="73" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="75" cy="73" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="85" cy="73" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="65" cy="95" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="75" cy="95" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="85" cy="95" r="2.5" fill="currentColor" stroke="none"/>
+          <circle cx="145" cy="100" r="28" fill="#fff"/>
+          <line x1="166" y1="121" x2="180" y2="135"/>
+          <text x="100" y="35" font-size="14" fill="currentColor" stroke="none" font-family="Arial">+</text>
+          <text x="170" y="55" font-size="14" fill="currentColor" stroke="none" font-family="Arial">+</text>
+          <text x="40" y="135" font-size="14" fill="currentColor" stroke="none" font-family="Arial">+</text>
+        </svg>
+        <p>Please click on the Generate Report button to view data.</p>
+      </div>
+    </div>
+    <div class="pagination">
+      <span class="meta">Total Records - 100</span>
+      <button class="page-btn">First</button>
+      <button class="page-btn">Previous</button>
+      <input class="page-input" value="1" />
+      <span class="meta">/ 5</span>
+      <button class="page-btn">Next</button>
+      <button class="page-btn">Last</button>
+      <select class="page-size">
+        <option>25</option><option selected>50</option><option>100</option>
+      </select>
+      <span class="meta">/ Page</span>
+    </div>
+  </div><!-- /detailView -->
+
+  <!-- ====== FILE VIEW (Employee list.docx) ====== -->
+  <div id="fileView" class="view">
+    <div class="file-header">
+      <div class="file-title-row">
+        <img class="file-title-icon" src="icons/word.svg" alt="Word document"/>
+        <h1 class="file-title">Employee list.docx</h1>
+      </div>
+      <div class="info-chips">
+        <div class="info-chip"><b>Server -</b>&nbsp;192.168.10.217</div>
+        <div class="info-chip" style="max-width:560px;"><b>File Path -</b>&nbsp;C:\Users\dcm\s\Desktop\share 2\New folder\2F\2.2\F2.3\F...</div>
+      </div>
+      <p class="breadcrumbs">
+        <a data-back="home">Home</a><span class="sep">/</span>
+        <a data-back="identify">Lepide Identify</a><span class="sep">/</span>
+        <a data-back="reports">Reports</a><span class="sep">/</span>
+        <a data-back="classified">Classified Files</a><span class="sep">/</span>
+        <span class="current">Classifications</span>
+      </p>
+    </div>
+    <div class="file-content">
+      <div class="pattern-table-wrap">
+        <table class="pattern-table">
+          <colgroup><col class="col-name"/><col class="col-count"/></colgroup>
+          <thead>
+            <tr>
+              <th><div class="th-row">Pattern Lists <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+              <th><div class="th-row">Total Count <svg width="12" height="12"><use href="#i-arrow-up"/></svg></div></th>
+            </tr>
+            <tr class="th-search-row">
+              <th><div class="th-search"><input type="text" aria-label="Search Pattern Lists"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+              <th><div class="th-search"><input type="text" aria-label="Search Total Count"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+            </tr>
+          </thead>
+          <tbody id="patternTbody"></tbody>
+        </table>
+      </div>
+      <div class="pinned-column">
+        <div class="pin-head">
+          <span id="pinHeadLabel">US Passport Number</span>
+          <button id="pinToggle" class="pin-toggle" aria-pressed="true" aria-label="Toggle pinned column">
+            <svg class="pin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="17" x2="12" y2="22"/>
+              <path d="M5 17h14V12a3 3 0 0 0-3-3h-1V5a3 3 0 0 0-6 0v4H8a3 3 0 0 0-3 3v5z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pin-search">
+          <svg width="14" height="14"><use href="#i-search"/></svg>
+          <input id="pinSearch" type="text" placeholder="Search values" aria-label="Search pinned values"/>
+        </div>
+        <div class="pin-sub">Value</div>
+        <div id="pinnedList"></div>
+      </div>
+      <div class="right-panel">
+        <div class="rp-toolbar">
+          <div class="view-switch" role="tablist" aria-label="View mode">
+            <button class="vs-opt active" data-view="doc" role="tab" aria-selected="true">Document</button>
+            <button class="vs-opt" data-view="mail" role="tab" aria-selected="false">Email</button>
+          </div>
+          <div class="rp-tools">
+            <button class="rp-btn" id="prevMatch" title="Previous match" aria-label="Previous match">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="match-counter" id="matchCounter">1 / 1</span>
+            <button class="rp-btn" id="nextMatch" title="Next match" aria-label="Next match">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+            </button>
+            <span class="rp-divider"></span>
+            <button class="rp-btn reveal-btn" id="revealToggle" aria-pressed="false" title="Reveal sensitive values">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span class="reveal-label">Reveal</span>
+            </button>
+          </div>
+        </div>
+        <div class="text-content" id="textContent"></div>
+      </div>
+    </div>
+  </div><!-- /fileView -->
+  </main>
+
+  <button class="fab" title="Help">
+    <svg width="26" height="26"><use href="#i-help"/></svg>
+  </button>
+</div>
+
+<script>
+// ============= FOLDER LIST =============
+const FOLDERS = [
+  { name: 'All Reports', children: [
+    'Classified Emails',
+    'Email Classification Failures',
+    'Classified Files',
+    'File Classification Failures',
+    'Classified SharePoint Objects',
+    'SharePoint Object Classification Failures',
+    'Classified OneDrive Objects',
+    'OneDrive Objects Classification Failures',
+  ]},
+  { name: 'Active Directory' },
+  { name: 'Exchange Server' },
+  { name: 'Exchange Server Online' },
+  { name: 'File Server' },
+  { name: 'SharePoint Online' },
+  { name: 'Current Permission Analysis' },
+  { name: 'Risk Anlysis' },
+  { name: 'Anomaly Analysis' },
+  { name: 'Azure AD' },
+  { name: 'MS Teams' },
+];
+const folderList = document.getElementById('folderList');
+folderList.innerHTML = FOLDERS.map((f, i) => `
+  <div class="folder-row${i === 0 ? ' active open' : ''}" data-folder="${f.name}">
+    <span class="plus"><svg width="12" height="12"><use href="#i-plus"/></svg></span>
+    <svg class="folder-ic" viewBox="0 0 32 32"><use href="#i-folder"/></svg>
+    <span class="name">${f.name}</span>
+  </div>
+  <div class="folder-children" data-children-of="${f.name}">
+    ${(f.children || []).map(c => `
+      <div class="file-row" data-file="${c}">
+        <svg><use href="#i-file-text"/></svg>
+        <span class="name">${c}</span>
+      </div>
+    `).join('')}
+  </div>
+`).join('');
+
+// View switching
+const listView = document.getElementById('listView');
+const detailView = document.getElementById('detailView');
+const fileView = document.getElementById('fileView');
+const listActions = document.getElementById('listActions');
+const topbarTitle = document.getElementById('topbarTitle');
+const detailName = document.getElementById('detailName');
+const detailCrumb = document.getElementById('detailCrumb');
+
+const topbar = document.getElementById('topbar');
+function showDetail(fileName) {
+  listView.classList.remove('active');
+  fileView.classList.remove('active');
+  detailView.classList.add('active');
+  listActions.style.display = 'none';
+  detailName.textContent = fileName;
+  detailCrumb.textContent = fileName;
+  pane.classList.add('collapsed');
+  collapseBtn.style.display = 'none';
+  topbar.style.display = 'none';
+}
+function showList() {
+  detailView.classList.remove('active');
+  fileView.classList.remove('active');
+  listView.classList.add('active');
+  listActions.style.display = 'flex';
+  topbarTitle.textContent = 'Identify - Reports';
+  pane.classList.remove('collapsed');
+  collapseBtn.style.display = '';
+  collapseBtn.classList.remove('flipped');
+  topbar.style.display = '';
+}
+function showFile() {
+  listView.classList.remove('active');
+  detailView.classList.remove('active');
+  fileView.classList.add('active');
+  listActions.style.display = 'none';
+  pane.classList.add('collapsed');
+  collapseBtn.style.display = 'none';
+  topbar.style.display = 'none';
+}
+
+// Breadcrumb back
+document.querySelectorAll('.breadcrumbs a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = a.dataset.back;
+    if (target === 'classified') {
+      // Going back to Classified Files report (detail view)
+      showDetail('Classified Files');
+      const fileRow = document.querySelector('.file-row[data-file="Classified Files"]');
+      if (fileRow) fileRow.classList.add('active');
+    } else {
+      showList();
+    }
+  });
+});
+
+// Generate Report -> populate detail table
+const CLASSIFIED_FILES_DATA = [
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2207', '7',  '$5',  '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2208', '12', '$6',  '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2209', '19', '$7',  '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2210', '23', '$8',  '04-07-2025 11:17:33 AM', false],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2211', '31', '$9',  '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2212', '45', '$10', '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2213', '56', '$11', '04-07-2025 11:17:33 AM', false],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2214', '63', '$12', '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2215', '78', '$13', '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2216', '89', '$14', '04-07-2025 11:17:33 AM', true],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2026', '17', '$15', '04-07-2025 11:17:33 AM', false],
+  ['192.168.10.217', 'C:\\Users\\dcm\\s\\Desktop\\sha..', 'CCPA Religious..', 'California Consumer Priv.', '2027', '20', '$20', '04-07-2025 11:17:33 AM', true],
+];
+const detailTbody = document.getElementById('detailTbody');
+const detailEmpty = document.getElementById('detailEmpty');
+document.getElementById('generateReportBtn').addEventListener('click', () => {
+  function positionInfoTooltip(e) {
+    const icon = e.target.closest('.info-icon');
+    if (!icon) return;
+    const tip = icon.querySelector('.info-tooltip');
+    if (!tip) return;
+    const iconR = icon.getBoundingClientRect();
+    const tipW = tip.offsetWidth || 260;
+    const margin = 8;
+    const iconCenter = iconR.left + iconR.width / 2;
+    let left = iconCenter;
+    const halfW = tipW / 2;
+    if (left + halfW > window.innerWidth - margin) left = window.innerWidth - margin - halfW;
+    if (left - halfW < margin) left = margin + halfW;
+    tip.style.left = left + 'px';
+    tip.style.top = iconR.top + 'px';
+    const arrowOffset = iconCenter - left;
+    tip.style.setProperty('--arrow-x', arrowOffset + 'px');
+  }
+  document.addEventListener('mouseover', positionInfoTooltip);
+  document.addEventListener('focusin', positionInfoTooltip);
+
+  detailTbody.innerHTML = CLASSIFIED_FILES_DATA.map(r => {
+    const cells = r.slice(0, 8).map(c => `<td>${c}</td>`).join('');
+    const previewAvailable = r[8] !== false;
+    const previewCell = previewAvailable
+      ? `<td class="preview-cell"><button class="view-file-btn" type="button">View File</button></td>`
+      : `<td class="preview-cell"><span class="preview-na">N/A<span class="info-icon" tabindex="0" aria-label="Preview info"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span class="info-tooltip">This file can't be previewed here. Please contact your administrator to request access.</span></span></span></td>`;
+    return `<tr>${cells}${previewCell}</tr>`;
+  }).join('');
+  detailEmpty.style.display = 'none';
+});
+
+// View File button click (delegated) -> open file view
+detailTbody.addEventListener('click', e => {
+  const btn = e.target.closest('.view-file-btn');
+  if (!btn) return;
+  btn.animate(
+    [{ transform: 'scale(1)' }, { transform: 'scale(0.92)' }, { transform: 'scale(1)' }],
+    { duration: 180, easing: 'ease-out' }
+  );
+  setTimeout(showFile, 140);
+});
+
+// ============= FILE VIEW DATA =============
+const PATTERNS = [
+  { name: 'US Passport Number', count: 4532, prefix: 'US', selected: true },
+  { name: "Australian Driver's License ID", count: 6789, prefix: 'AU' },
+  { name: 'UK Social Security Identifier', count: 4532, prefix: 'UK' },
+  { name: 'Indian Aadhaar Identification Number', count: 1234, prefix: 'IN' },
+  { name: 'Canadian SIN (Social Insurance Number)', count: 9876, prefix: 'CA' },
+  { name: "Oz Driver's License Code", count: 5432, prefix: 'OZ' },
+  { name: 'UK National Tax Number', count: 8765, prefix: 'UKT' },
+  { name: 'Aadhaar Unique ID', count: 2345, prefix: 'AAD' },
+  { name: 'Canadian Social Security Number (SIN)', count: 3456, prefix: 'CAS' },
+  { name: 'Australian License Registration Number', count: 7890, prefix: 'ALR' },
+  { name: 'UK Insurance Reference Number', count: 4532, prefix: 'UKI' },
+  { name: 'Aadhaar Personal ID Number', count: 5432, prefix: 'APN' },
+  { name: 'Canadian SIN Identifier', count: 6789, prefix: 'CSI' },
+];
+function valuesFor(prefix) {
+  return Array.from({ length: 13 }, (_, i) => prefix + String(i + 1).padStart(6, '0'));
+}
+
+const patternTbody = document.getElementById('patternTbody');
+function renderPatterns() {
+  patternTbody.innerHTML = PATTERNS.map((p, i) => {
+    const sel = p.selected ? 'selected' : '';
+    const nameCell = p.selected
+      ? `<td><span class="pattern-cell"><span class="pattern-tick"><svg viewBox="0 0 29 17"><use href="#i-double-check"/></svg></span><span class="pattern-name">${p.name}</span></span></td>`
+      : `<td><span class="pattern-name">${p.name}</span></td>`;
+    return `<tr class="${sel}" data-i="${i}">${nameCell}<td><span class="count-pill">${p.count}</span></td></tr>`;
+  }).join('');
+}
+renderPatterns();
+
+patternTbody.addEventListener('click', e => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  PATTERNS.forEach(p => p.selected = false);
+  PATTERNS[+tr.dataset.i].selected = true;
+  renderPatterns();
+  renderPinned();
+});
+
+const pinHeadLabel = document.getElementById('pinHeadLabel');
+const pinnedList = document.getElementById('pinnedList');
+
+function applyPinSearch() {
+  const input = document.getElementById('pinSearch');
+  const q = (input && input.value || '').trim().toLowerCase();
+  pinnedList.querySelectorAll('.pin-row').forEach(row => {
+    const v = (row.dataset.v || '').toLowerCase();
+    row.style.display = !q || v.includes(q) ? '' : 'none';
+  });
+}
+document.getElementById('pinSearch').addEventListener('input', applyPinSearch);
+const textContent = document.getElementById('textContent');
+const matchCounter = document.getElementById('matchCounter');
+const revealBtn = document.getElementById('revealToggle');
+const prevMatchBtn = document.getElementById('prevMatch');
+const nextMatchBtn = document.getElementById('nextMatch');
+
+let viewMode = 'doc';
+let revealed = false;
+let activeMatch = 0;
+
+function hl(value, idx) {
+  return `<span class="hl" data-mi="${idx}" data-v="${value}" title="">${value}</span>`;
+}
+
+function docBody(p, v) {
+  return `
+    <p>An internal audit was conducted on the ${p.name} dataset consisting of 12 sample records (No. ${hl(v[0], 0)} – ${v[11]}) to assess data accuracy, workflow compliance, and audit-trail consistency. The review covered pending, issued, expired, and revoked records to identify gaps in verification, documentation, and accountability. The findings reveal procedural and systemic weaknesses in metadata validation, documentation traceability, and audit-log completeness that could compromise operational transparency if such patterns existed in a live environment.</p>
+    <h4>Audit Findings Overview</h4>
+    <p>The audit identified three major areas of concern: missing verification references in pending applications, incomplete revocation documentation, and insufficient audit-trail granularity.</p>
+    <h4>Verification Gaps:</h4>
+    <p>Pending records such as No. ${hl(v[2], 1)} (Priya N. Shah), ${v[6]} (Noor S. Khan), and ${v[9]} (Rashid A. Qureshi) were found without linked verification ticket IDs or document reference numbers. Notes mentioned "Awaiting biometrics" or "Parental consent required," but no traceable artifacts were captured.</p>
+    <h4>Revocation Documentation Issues:</h4>
+    <p>The revoked record, No. ${hl(v[7], 2)} (Benjamin T. Holt), was marked as "Revoked due to documentation fraud," yet lacked an associated investigation case ID, revocation order, or authorizer reference.</p>
+    <h4>Audit-Log Deficiencies:</h4>
+    <p>Multiple records, including No. ${v[3]}, showed incomplete audit entries. Logs captured only status change timestamps but omitted critical details like the operator ID, previous status, and reason for the change.</p>
+    <h4>Root Cause Analysis</h4>
+    <p>The audit attributes these gaps to a lack of enforced validation rules during status transitions, optional metadata fields within the issuance workflow, and insufficient retention or completeness in the audit-logging mechanism.</p>
+    <h4>Recommendations and Remediation Plan</h4>
+    <p>To ensure compliance and strengthen operational integrity, the audit recommends immediate and structured remediation steps.</p>
+  `;
+}
+
+function emailBody(p, v) {
+  return `
+    <div class="email-card">
+      <div class="email-subject">Onboarding paperwork — ${p.name} on file (Ref ${hl(v[0], 0)})</div>
+      <div class="email-row"><span class="lbl">From</span><span class="val">Emma R. Walker &lt;emma.walker@acme-hr.com&gt;</span></div>
+      <div class="email-row"><span class="lbl">To</span><span class="val">compliance-team@acme.com</span></div>
+      <div class="email-row"><span class="lbl">Cc</span><span class="val">priya.shah@acme.com, benjamin.holt@acme.com</span></div>
+      <div class="email-row"><span class="lbl">Sent</span><span class="val">Mon, 27 Apr 2026 09:14 AEST</span></div>
+      <div class="email-attachments">
+        <span class="att-chip">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          employee_form.pdf <span class="att-count">3 matches</span>
+        </span>
+        <span class="att-chip">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          id_scan.jpg <span class="att-count">1 match</span>
+        </span>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Hi team,</p>
+      <p>Please find attached the onboarding paperwork for the three new joiners. As discussed in Friday's stand-up, I've cross-checked their ${p.name} entries against the source documents.</p>
+      <p>For your records, the verified IDs are: Priya N. Shah — ${hl(v[2], 1)}, Noor S. Khan — ${hl(v[6], 2)}, and Rashid A. Qureshi — ${hl(v[9], 3)}. Benjamin T. Holt's previous record on file (${hl(v[7], 4)}) has been superseded; please update the master register.</p>
+      <p>Could compliance confirm receipt by EOD Wednesday so payroll can finalise the onboarding batch? Happy to jump on a quick call if anything looks off.</p>
+      <p>Thanks,<br/>Emma</p>
+      <div class="email-signature">
+        Emma R. Walker · People &amp; Culture, Acme Pty Ltd<br/>
+        Lvl 12, 100 Market St, Sydney NSW 2000 · +61 2 5550 0100
+      </div>
+    </div>
+  `;
+}
+
+function renderPinned() {
+  const p = PATTERNS.find(p => p.selected) || PATTERNS[0];
+  const values = valuesFor(p.prefix);
+  pinHeadLabel.textContent = p.name;
+  pinnedList.innerHTML = values.map(v => `<div class="pin-row" data-v="${v}">${v}</div>`).join('');
+  applyPinSearch();
+
+  textContent.innerHTML = viewMode === 'mail' ? emailBody(p, values) : docBody(p, values);
+  textContent.dataset.masked = (viewMode === 'mail' && !revealed) ? 'true' : 'false';
+
+  // tooltips per match
+  const matches = textContent.querySelectorAll('.hl');
+  matches.forEach((el, i) => {
+    el.dataset.mi = i;
+    el.title = `${p.name} · match ${i + 1} of ${matches.length}`;
+  });
+
+  activeMatch = matches.length ? Math.min(activeMatch, matches.length - 1) : 0;
+  updateMatchUI();
+}
+
+function updateMatchUI() {
+  const matches = textContent.querySelectorAll('.hl');
+  matches.forEach(el => el.classList.remove('is-active'));
+  if (matches.length) matches[activeMatch].classList.add('is-active');
+  matchCounter.textContent = matches.length ? `${activeMatch + 1} / ${matches.length}` : '0 / 0';
+  prevMatchBtn.disabled = matches.length < 2;
+  nextMatchBtn.disabled = matches.length < 2;
+}
+
+function jumpToMatch(idx) {
+  const matches = textContent.querySelectorAll('.hl');
+  if (!matches.length) return;
+  activeMatch = (idx + matches.length) % matches.length;
+  updateMatchUI();
+  matches[activeMatch].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const v = matches[activeMatch].dataset.v;
+  const row = pinnedList.querySelector(`.pin-row[data-v="${v}"]`);
+  if (row) {
+    pinnedList.querySelectorAll('.pin-row.is-active').forEach(r => r.classList.remove('is-active'));
+    row.classList.add('is-active');
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+prevMatchBtn.addEventListener('click', () => jumpToMatch(activeMatch - 1));
+nextMatchBtn.addEventListener('click', () => jumpToMatch(activeMatch + 1));
+
+revealBtn.addEventListener('click', () => {
+  revealed = !revealed;
+  revealBtn.setAttribute('aria-pressed', revealed ? 'true' : 'false');
+  revealBtn.querySelector('.reveal-label').textContent = revealed ? 'Hide' : 'Reveal';
+  if (viewMode === 'mail') textContent.dataset.masked = revealed ? 'false' : 'true';
+});
+
+document.querySelectorAll('.vs-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vs-opt').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    viewMode = btn.dataset.view;
+    activeMatch = 0;
+    renderPinned();
+  });
+});
+
+textContent.addEventListener('click', e => {
+  const m = e.target.closest('.hl');
+  if (!m) return;
+  jumpToMatch(+m.dataset.mi);
+});
+
+pinnedList.addEventListener('click', e => {
+  const row = e.target.closest('.pin-row');
+  if (!row) return;
+  const v = row.dataset.v;
+  const match = textContent.querySelector(`.hl[data-v="${v}"]`);
+  if (match) jumpToMatch(+match.dataset.mi);
+});
+
+renderPinned();
+
+document.getElementById('pinToggle').addEventListener('click', () => {
+  const fc = document.querySelector('#fileView .file-content');
+  const collapsed = fc.classList.toggle('pattern-collapsed');
+  const btn = document.getElementById('pinToggle');
+  btn.setAttribute('aria-pressed', collapsed ? 'false' : 'true');
+});
+
+// Folder + file selection
+folderList.addEventListener('click', e => {
+  const file = e.target.closest('.file-row');
+  if (file) {
+    folderList.querySelectorAll('.file-row.active').forEach(r => r.classList.remove('active'));
+    file.classList.add('active');
+    showDetail(file.dataset.file);
+    return;
+  }
+  const row = e.target.closest('.folder-row');
+  if (!row) return;
+  folderList.querySelectorAll('.folder-row.active').forEach(r => { if (r !== row) r.classList.remove('active'); });
+  row.classList.add('active');
+  row.classList.toggle('open');
+});
+
+// Folder search filter (also searches child files)
+document.getElementById('folderSearch').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  folderList.querySelectorAll('.folder-row').forEach(r => {
+    const folderMatch = r.dataset.folder.toLowerCase().includes(q);
+    const childrenWrap = r.nextElementSibling;
+    let childMatch = false;
+    if (childrenWrap) {
+      childrenWrap.querySelectorAll('.file-row').forEach(fr => {
+        const m = fr.dataset.file.toLowerCase().includes(q);
+        fr.style.display = (!q || m) ? '' : 'none';
+        if (m) childMatch = true;
+      });
+    }
+    const visible = !q || folderMatch || childMatch;
+    r.style.display = visible ? '' : 'none';
+    if (childrenWrap) childrenWrap.style.display = (!q || childMatch) ? '' : 'none';
+    if (q && childMatch) r.classList.add('open');
+  });
+});
+
+// ============= TABLE DATA =============
+const REPORTS = [
+  ['All Environment Changes (All Environment)', 'Shows all changes on all environments', 'Predefined', true],
+  ['All Object Changes (Active Directory)', 'Shows all object changes', 'Predefined', false],
+  ['Failed Logons (Active Directory)', 'Shows all failed logon attempts', 'Predefined', false],
+  ['All Successful Authentication (Active Directory)', 'Shows successful authentications', 'Predefined', false],
+  ['Concurrent Logons (Active Directory)', 'Shows concurrent logons', 'Predefined', false],
+  ['Use Logged on to multiple Computers (Active Directory)', 'Shows multi-computer logons', 'Predefined', false],
+  ['Admin Group Changes (Active Directory)', 'Shows admin group changes', 'Predefined', false],
+  ['Security Group Changes (Active Directory)', 'Shows security group changes', 'Predefined', false],
+  ['User Password Reset and Change Attempts (Active Directory)', 'Shows password resets', 'Predefined', false],
+  ['Schema Changes (Active Directory)', 'Shows AD schema changes', 'Predefined', false],
+  ['Permission Changes (Active Directory)', 'Shows AD permission changes', 'Predefined', false],
+  ['All Exchange Online Changes (Exchange Server Online)', 'Shows all Exchange Online changes', 'Predefined', true],
+  ['All Exchange Server Permission Changes (Exchange Server)', 'Shows Exchange permission changes', 'Predefined', false],
+  ['Mailbox Accessed by Owners (Exchange Server)', 'Shows mailbox owner access', 'Predefined', false],
+  ['Mailbox Accessed by Non Owners (Exchange Server)', 'Shows non-owner mailbox access', 'Predefined', false],
+  ['All Exchange Server Changes (Exchange Server)', 'Shows all Exchange Server changes', 'Predefined', false],
+  ['All Mailbox Modifications (Exchange Server)', 'Shows mailbox modifications', 'Predefined', false],
+];
+
+const tbody = document.getElementById('tableBody');
+function renderRows(data) {
+  tbody.innerHTML = data.map((r, i) => `
+    <tr data-idx="${i}">
+      <td title="${r[0]}">${r[0]}</td>
+      <td title="${r[1]}">${r[1]}</td>
+      <td>—</td>
+      <td>—</td>
+      <td class="center"><span class="toggle ${r[3] ? 'on' : ''}" data-toggle="${i}"></span></td>
+      <td>${r[2]}</td>
+      <td class="center">—</td>
+      <td>
+        <div class="row-actions">
+          <button class="ico-btn danger" title="Delete"><svg width="18" height="18"><use href="#i-trash"/></svg></button>
+          <button class="ico-btn share" title="Share"><svg width="18" height="18"><use href="#i-share"/></svg></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+renderRows(REPORTS);
+
+// Toggle interaction
+tbody.addEventListener('click', e => {
+  const t = e.target.closest('.toggle');
+  if (t) { t.classList.toggle('on'); return; }
+  const del = e.target.closest('.ico-btn.danger');
+  if (del) {
+    const tr = del.closest('tr');
+    tr.style.transition = 'opacity .2s'; tr.style.opacity = '0';
+    setTimeout(() => tr.remove(), 200);
+  }
+});
+
+// Per-column search
+document.querySelectorAll('.col-search input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const filters = {};
+    document.querySelectorAll('.col-search input').forEach(i => {
+      if (i.value) filters[i.dataset.col] = i.value.toLowerCase();
+    });
+    Array.from(tbody.children).forEach((row, i) => {
+      const r = REPORTS[i]; if (!r) return;
+      const name = r[0].toLowerCase(), desc = r[1].toLowerCase(), type = r[2].toLowerCase();
+      let ok = true;
+      if (filters.name && !name.includes(filters.name)) ok = false;
+      if (filters.desc && !desc.includes(filters.desc)) ok = false;
+      if (filters.type && !type.includes(filters.type)) ok = false;
+      row.style.display = ok ? '' : 'none';
+    });
+  });
+});
+
+// Sort
+document.querySelectorAll('.sort').forEach(s => {
+  s.addEventListener('click', () => {
+    const desc = s.classList.toggle('desc');
+    const col = s.dataset.col;
+    const sorted = [...REPORTS].sort((a, b) => {
+      const ai = col === 'name' ? 0 : col === 'type' ? 2 : 0;
+      return (a[ai] > b[ai] ? 1 : -1) * (desc ? -1 : 1);
+    });
+    renderRows(sorted);
+  });
+});
+
+// Sidebar nav active state
+document.querySelectorAll('.nav-item').forEach(n => {
+  n.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+    n.classList.add('active');
+  });
+});
+
+// ============= COLLAPSE PANE =============
+const pane = document.getElementById('folderPane');
+const collapseBtn = document.getElementById('collapseBtn');
+collapseBtn.addEventListener('click', () => {
+  pane.classList.toggle('collapsed');
+  collapseBtn.classList.toggle('flipped');
+});
+
+// ============= PAGINATION =============
+let curPage = 1, maxPage = 5;
+const pageInput = document.getElementById('pageInput');
+document.querySelectorAll('.page-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const a = b.dataset.action;
+    if (a === 'first') curPage = 1;
+    else if (a === 'last') curPage = maxPage;
+    else if (a === 'next') curPage = Math.min(maxPage, curPage + 1);
+    else if (a === 'prev') curPage = Math.max(1, curPage - 1);
+    pageInput.value = curPage;
+  });
+});
+pageInput.addEventListener('change', () => {
+  let v = parseInt(pageInput.value) || 1;
+  v = Math.max(1, Math.min(maxPage, v));
+  curPage = v; pageInput.value = v;
+});
+</script>
+</body>
+</html>
