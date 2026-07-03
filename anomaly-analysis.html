@@ -401,6 +401,16 @@
   .pbo-path { display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-bottom: 1px solid var(--border); background: #fff; }
   .pbo-path .ctx-val { color: var(--primary); }
 
+  /* Permissions/Excessive Permissions by Object: split bottom into two panels */
+  #pboView .pbo-bottom { flex-direction: row; gap: 0; align-items: stretch; }
+  #pboView .pbo-perm-panel { flex: 1.4; min-width: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-right: 1px solid var(--border); }
+  #pboView .pbo-files-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  #pboView .pbo-panel-head { display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-bottom: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; flex-shrink: 0; }
+  #pboView .pbo-panel-head svg { color: #e0922f; flex-shrink: 0; }
+  #pboView .pbo-panel-head .ph-val { color: var(--primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  #pboView .pbo-perm-panel .panel-body, #pboView .pbo-files-panel .panel-body { flex: 1; overflow: auto; min-height: 0; }
+  #pboView .pbo-files-table { min-width: 640px; }
+
   /* trustee-grouped permission rows */
   .trustee-head td { background: #f3f6fc !important; font-weight: 600; cursor: pointer; }
   .trustee-head .tr-cell { display: flex; align-items: center; gap: 8px; }
@@ -1416,17 +1426,11 @@
                     <th>Object Name</th>
                     <th class="ic-col" title="Trustees"><svg width="16" height="16"><use href="#i-group"/></svg></th>
                     <th class="ic-col" title="Shared"><svg width="16" height="16"><use href="#i-folder-share"/></svg></th>
-                    <th class="ic-col" title="Open access"><svg width="16" height="16"><use href="#i-eye-off"/></svg></th>
-                    <th>Object Type</th><th>Owner</th><th>Content Type</th><th>Compliance</th><th>Monetary Value</th><th>Risk Level</th><th>Last Scan</th>
+                    <th>Owner</th><th>Last Scan</th>
                   </tr>
                   <tr class="filter-row">
                     <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
-                    <th class="ic-col"></th><th class="ic-col"></th><th class="ic-col"></th>
-                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
-                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
-                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
-                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
-                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                    <th class="ic-col"></th><th class="ic-col"></th>
                     <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
                     <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
                   </tr>
@@ -1440,8 +1444,10 @@
             </div>
           </div>
 
-          <!-- BOTTOM: permissions -->
+          <!-- BOTTOM: split — permissions on folder (left) + files in folder (right) -->
           <div class="pbo-bottom">
+           <!-- LEFT: permissions on folder -->
+           <div class="pbo-perm-panel">
             <div class="pbo-perm-bar">
               <div class="perm-tabs">
                 <button class="perm-tab active" data-tab="perm">Permissions</button>
@@ -1459,7 +1465,7 @@
                 <button class="ctx-ic" title="Effective access"><svg width="16" height="16"><use href="#i-shield"/></svg></button>
               </div>
             </div>
-            <div class="pbo-path"><svg width="16" height="16" style="color:#e0922f"><use href="#i-folder"/></svg><span class="ctx-lbl">Path :</span><span class="ctx-val" id="pboPath">—</span></div>
+            <div class="pbo-panel-head"><svg width="16" height="16"><use href="#i-folder"/></svg><span class="ph-lbl">Permissions on Folder :</span><span class="ph-val" id="pboPath">—</span></div>
             <div class="panel-body" style="position:relative">
               <table class="perm-table" id="permObjTable">
                 <thead>
@@ -1506,6 +1512,35 @@
               </table>
               <div class="panel-empty subtle" id="permObjEmpty"><p id="permObjMsg">Select an object to view its permissions.</p></div>
             </div>
+           </div><!-- /pbo-perm-panel -->
+
+           <!-- RIGHT: files in folder -->
+           <div class="pbo-files-panel">
+            <div class="pbo-panel-head"><svg width="16" height="16"><use href="#i-folder"/></svg><span class="ph-lbl">Files in Folder :</span><span class="ph-val" id="pboFilesFolder">—</span></div>
+            <div class="panel-body" style="position:relative">
+              <table class="pbo-table pbo-files-table" id="filesTable">
+                <thead>
+                  <tr>
+                    <th>Object Name</th>
+                    <th class="ic-col" title="Trustees"><svg width="16" height="16"><use href="#i-group"/></svg></th>
+                    <th class="ic-col" title="Shared"><svg width="16" height="16"><use href="#i-folder-share"/></svg></th>
+                    <th class="ic-col" title="Open access"><svg width="16" height="16"><use href="#i-eye-off"/></svg></th>
+                    <th>Content Type</th><th>Compliance</th><th>Monetary Value</th><th>Risk Level</th>
+                  </tr>
+                  <tr class="filter-row">
+                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                    <th class="ic-col"></th><th class="ic-col"></th><th class="ic-col"></th>
+                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                    <th><div class="col-search"><input placeholder="Search"/><svg width="14" height="14"><use href="#i-search"/></svg></div></th>
+                  </tr>
+                </thead>
+                <tbody id="filesBody"></tbody>
+              </table>
+              <div class="panel-empty subtle" id="filesEmpty"><p id="filesMsg">Select a folder to view its files.</p></div>
+            </div>
+           </div><!-- /pbo-files-panel -->
           </div>
         </section>
       </div>
@@ -3345,7 +3380,7 @@ function resetPbo(){
   if($('objSearch')) $('objSearch').value='';
   $('objBody').innerHTML=''; show($('objTableEmpty'),true); $('objTableMsg').textContent='Click Generate Report to load objects.';
   $('permObjBody').innerHTML=''; show($('permObjEmpty'),true); $('permObjMsg').textContent='Select an object to view its permissions.';
-  $('pboPath').textContent='—'; pboGroups=[];
+  $('pboPath').textContent='—'; pboGroups=[]; clearFiles();
   pboTrail=[]; if($('pboCrumb')){ $('pboCrumb').innerHTML=''; $('pboCrumb').style.display='none'; }
 }
 
@@ -3428,13 +3463,13 @@ function pboOpen(trail){
   renderPboCrumb();
   const objs=objsForTrail(pboTrail);
   show($('objTableEmpty'), objs.length===0);
-  skeleton($('objBody'),11,Math.max(objs.length,1));
+  skeleton($('objBody'),5,Math.max(objs.length,1));
   const atRoot = pboTrail.length===0;
-  if(atRoot){ $('permObjBody').innerHTML=''; show($('permObjEmpty'),true); $('permObjMsg').textContent='Select an object to view its permissions.'; $('pboPath').textContent='—'; }
+  if(atRoot){ $('permObjBody').innerHTML=''; show($('permObjEmpty'),true); $('permObjMsg').textContent='Select an object to view its permissions.'; $('pboPath').textContent='—'; clearFiles(); }
   else { show($('permObjEmpty'),false); skeleton($('permObjBody'),10,5); }
   setTimeout(()=>{
     renderObjects(objs);
-    if(!atRoot) setPbo(uncPath(...pboTrail), permsFor(deep));
+    if(!atRoot){ setPbo(uncPath(...pboTrail), permsFor(deep)); renderFiles(deep); }
   }, 300);
 }
 // left-tree click routes into the explorer pane
@@ -3448,11 +3483,10 @@ function renderObjects(objs){
     const isFolder=o.type==='FOLDER';
     const path=uncPath(...pboTrail, o.name);
     const openBtn = isFolder ? `<button class="obj-open" title="Open folder"><svg width="14" height="14"><use href="#i-chevron-down"/></svg></button>` : '';
-    const openAccessIc = isFolder ? '' : `<svg width="15" height="15" style="color:var(--primary)" title="Open access"><use href="#i-eye-off"/></svg>`;
     return `<tr data-obj="${o.name}" data-path="${path}" data-type="${o.type}" class="${isFolder?'is-folder':''}">
       <td><span class="obj-name"><svg width="16" height="16" viewBox="0 0 ${isFolder?'32 32':'24 24'}"><use href="#${isFolder?'i-folder':'i-file-text'}"/></svg><span class="obj-label">${o.name}</span>${openBtn}</span></td>
-      <td class="ic-col"></td><td class="ic-col"></td><td class="ic-col">${openAccessIc}</td>
-      <td>${o.type}</td><td>${o.owner}</td><td class="muted-cell">${o.content}</td><td class="muted-cell">${o.compliance}</td><td class="muted-cell">${o.monetary}</td><td class="muted-cell">${o.risk}</td><td>${o.lastScan}</td>
+      <td class="ic-col"></td><td class="ic-col"></td>
+      <td>${o.owner}</td><td>${o.lastScan}</td>
     </tr>`;
   }).join('');
   staggerIn(tb);
@@ -3470,7 +3504,34 @@ function selectObject(path, objName, tr){
   tr.classList.add('selected');
   show($('permObjEmpty'),false);
   skeleton($('permObjBody'),10,5);
-  setTimeout(()=>setPbo(path, permsFor(objName)), 260);
+  const isFolder = tr.dataset.type==='FOLDER';
+  setTimeout(()=>{ setPbo(path, permsFor(objName)); renderFiles(isFolder?objName:null); }, 260);
+}
+
+/* ---- right-hand "Files in Folder" panel: objects contained in the selected folder ---- */
+function clearFiles(){
+  if($('filesBody')) $('filesBody').innerHTML='';
+  if($('pboFilesFolder')) $('pboFilesFolder').textContent='—';
+  show($('filesEmpty'),true);
+  if($('filesMsg')) $('filesMsg').textContent='Select a folder to view its files.';
+}
+function renderFiles(name){
+  if(!name){ clearFiles(); return; }
+  const objs = objectsForName(name);
+  const tb=$('filesBody');
+  $('pboFilesFolder').textContent = name; $('pboFilesFolder').title = name;
+  if(!objs.length){ tb.innerHTML=''; show($('filesEmpty'),true); $('filesMsg').textContent='This folder contains no files.'; return; }
+  show($('filesEmpty'),false);
+  tb.innerHTML = objs.map(o=>{
+    const isFolder=o.type==='FOLDER';
+    const openAccessIc = isFolder ? '' : `<svg width="15" height="15" style="color:var(--primary)" title="Open access"><use href="#i-eye-off"/></svg>`;
+    return `<tr>
+      <td><span class="obj-name"><svg width="16" height="16" viewBox="0 0 ${isFolder?'32 32':'24 24'}"><use href="#${isFolder?'i-folder':'i-file-text'}"/></svg><span class="obj-label">${o.name}</span></span></td>
+      <td class="ic-col"></td><td class="ic-col"></td><td class="ic-col">${openAccessIc}</td>
+      <td class="muted-cell">${o.content}</td><td class="muted-cell">${o.compliance}</td><td class="muted-cell">${o.monetary}</td><td class="muted-cell">${o.risk}</td>
+    </tr>`;
+  }).join('');
+  staggerIn(tb);
 }
 
 function setPbo(path, groups){
